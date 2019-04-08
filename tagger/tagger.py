@@ -14,25 +14,8 @@ from .loadbalancer_tagger import LBTagger
 from .rds_tagger import RDSTagger
 from .s3_tagger import S3Tagger
 from .acm_pca_tagger import ACMPCATagger
-
-
-def parse_arn(arn):
-    # http://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html
-    elements = arn.split(':', 5)
-    result = {
-        'arn': elements[0],
-        'partition': elements[1],
-        'service': elements[2],
-        'region': elements[3],
-        'account': elements[4],
-        'resource': elements[5],
-        'resource_type': None
-    }
-    if '/' in result['resource']:
-        result['resource_type'], result['resource'] = result['resource'].split('/', 1)
-    elif ':' in result['resource']:
-        result['resource_type'], result['resource'] = result['resource'].split(':', 1)
-    return result
+from .route53_tagger import Route53Tagger
+from .utils import parse_arn
 
 
 class SingleResourceTagger(object):
@@ -51,6 +34,7 @@ class SingleResourceTagger(object):
         self.taggers['dynamodb'] = DynamoDBTagger(dryrun, verbose, role=role, region=region)
         self.taggers['lambda'] = LambdaTagger(dryrun, verbose, role=role, region=region)
         self.taggers['acm-pca'] = ACMPCATagger(dryrun, verbose, role=role, region=region)
+        self.taggers['route53'] = Route53Tagger(dryrun, verbose, role=role, region=region)
 
     def tag(self, resource_id, tags):
         if resource_id == "":
@@ -180,7 +164,7 @@ class CSVResourceTagger(object):
                 tags[key] = value
 
         tagger = self._lookup_tagger(resource_id, tag_index, row)
-        print("Applying tags to {0}",format(resource_id))
+        print("Applying tags to {0}".format(resource_id))
         if tagger.tag(resource_id, tags):
             print("Successfully applied tags to {0}".format(resource_id))
 
